@@ -1,0 +1,18 @@
+[
+    {
+    "title": "New Title",
+    "content": "is an excellent filler",
+    "user_id": 1
+
+},
+{
+    "title": "New Title2",
+    "content": "is an excellent filler2",
+    "user_id": 2
+},
+{
+    "title": "New Title3",
+    "content": "is an excellent filler3",
+    "user_id": 3
+}
+]
