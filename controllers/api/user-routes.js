@@ -88,11 +88,17 @@ router.post('/login', (req, res) => {
         return;
       }
       req.session.save(() => {
-        req.session.user_id = dbUserData.id;
-        req.session.username = dbUserData.username;
-        req.session.loggedIn = true;
-
-        res.json({ user: dbUserData, message: 'Logged in Successfully!' });
+        if (!req.session.loggedIn) {
+          req.session.user_id = dbUserData.id;
+          req.session.username = dbUserData.username;
+          req.session.loggedIn = true;
+        }
+        res.status(200).json({
+          user: dbUserData,
+          loggedIn: req.session.loggedIn,
+          username: req.session.username,
+          message: 'You are logged in!',
+        });
       });
     })
     .catch((err) => {
