@@ -3,32 +3,6 @@ const { Post, User, Comment } = require('../models');
 const router = require('express').Router();
 const withAuth = require('../utils/auth');
 
-router.get('/dashboard', withAuth, async (req, res, next) => {
-  try {
-    const username = req.session.user_id;
-    const postData = await Post.findAll({
-      where: { user_id: username },
-    }).catch((err) => {
-      res.json(err);
-    });
-    if (!postData) {
-      res.render('dashboard', {
-        loggedIn: req.session.loggedIn,
-        user_id: username,
-      });
-    } else {
-      const posts = postData.reverse().map((post) => post.get({ plain: true }));
-      res.render('dashboard', {
-        posts,
-        loggedIn: req.session.loggedIn,
-        user_id: username,
-      });
-    }
-  } catch (error) {
-    res.status(500).json(error);
-  }
-});
-
 router.get('/login', (req, res) => {
   if (req.session.loggedIn) {
     res.redirect('/');
@@ -138,6 +112,67 @@ router.get('/', (req, res) => {
       console.log(err);
       res.status(500).json(err);
     });
+});
+
+router.get('/edit/:id', withAuth, (req, res) => {
+  Post.findOne({
+    where: {
+      id: req.params.id,
+    },
+    attributes: ['id', 'title', 'content', 'created_at'],
+    include: [
+      {
+        model: User,
+        attributes: ['username'],
+      },
+      {
+        model: Comment,
+        attributes: ['id', 'comment_text', 'post_id', 'user_id', 'created_at'],
+        include: {
+          model: User,
+          attributes: ['username'],
+        },
+      },
+    ],
+  })
+    .then((dbPostData) => {
+      if (!dbPostData) {
+        res.status(404).json({ message: 'No post found with this id' });
+        return;
+      }
+
+      const post = dbPostData.get({ plain: true });
+      res.render('edit-post', { post, loggedIn: true });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json(err);
+    });
+});
+
+router.get('/dashboard/new', (req, res) => {
+  res.render('new-post');
+});
+
+router.get('/dashboard', withAuth, async (req, res, next) => {
+  try {
+    const memberData = await User.findByPk(req.session.user_id, {
+      attributes: {
+        include: ['id', 'username'],
+        exclude: ['password'],
+      },
+      include: [{ model: Post }],
+    });
+
+    // Serialize data so the template can read it
+    const posts = memberData.get({ plain: true });
+    res.render('profile', {
+      ...posts,
+      logged_in: true,
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
 module.exports = router;
